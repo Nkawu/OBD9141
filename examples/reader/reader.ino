@@ -5,7 +5,7 @@
 #define TX_PIN 1
 #define EN_PIN 5
 
-OBD9141 obd;
+OBDII9141 obd;
 
 void setup(){
     pinMode(EN_PIN, OUTPUT);
@@ -22,23 +22,21 @@ void loop(){
         while(1){
             res = obd.getCurrentPID(0x11, 1);
             if (res){
+                // Do something
             }
             
             res = obd.getCurrentPID(0x0C, 2);
             if (res){
+                // Do something
             }
 
             res = obd.getCurrentPID(0x0D, 1);
             if (res){
+                // Do something
             }
-            Serial.println();
 
             delay(200);
         }
     }
     delay(3000);
 }
-
-
-
-
