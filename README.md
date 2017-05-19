@@ -1,7 +1,7 @@
 OBDII9141
 ======
 
-This is a library to read data from the the ISO 9141-2 (K-line) pin of an [OBD-II][obd2] port found in cars using a MX33290 chip.
+This is a library to read data from the the ISO 9141-2 (K-line) pin of an [OBD-II][obd2] port found in cars using a MC33290 chip.
 
 Usage
 --------
