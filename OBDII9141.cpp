@@ -32,7 +32,6 @@ void OBDII9141::kline(bool enabled){
     digitalWrite(this->tx_pin, enabled);
 }
 
-
 uint8_t OBDII9141::checksum(void* b, uint8_t len){
     uint8_t ret = 0;
     for (uint8_t i=0; i < len; i++){
@@ -78,7 +77,7 @@ bool OBDII9141::request(void* request, uint8_t request_len, uint8_t ret_len){
     if (this->serial->readBytes(this->buffer, ret_len+1)){
         return (this->checksum(&(this->buffer[0]), ret_len) == this->buffer[ret_len]);// have data; return whether it is valid.
     } else {
-        OBDII9141println("Timeout on reading bytes.");
+        // OBDII9141println("Timeout on reading bytes.");
         return false; // failed getting data.
     }
 }
@@ -135,7 +134,7 @@ bool OBDII9141::init(){
     this->set_port(false); // disable the port.
     this->kline(true);
     delay(OBDII9141_INIT_IDLE_BUS_BEFORE); // no traffic on bus for 3 seconds.
-    OBDII9141println("Before magic 5 baud.");
+    // OBDII9141println("Before magic 5 baud.");
     // next, send the startup 5 baud init..
     this->kline(false); delay(200); // start
     this->kline(true); delay(400);  // first two bits
@@ -148,9 +147,9 @@ bool OBDII9141::init(){
 
     // done, from now on it the bus can be treated ad a 10400 baud serial port.
 
-    OBDII9141println("Before setting port.");
+    // OBDII9141println("Before setting port.");
     this->set_port(true);
-    OBDII9141println("After setting port.");
+    // OBDII9141println("After setting port.");
     uint8_t buffer[1];
 
     this->serial->setTimeout(300+200);
@@ -158,12 +157,12 @@ bool OBDII9141::init(){
 
     // read first value into buffer, should be 0x55
     if (this->serial->readBytes(buffer, 1)){
-        OBDII9141print("First read is: "); OBDII9141println(buffer[0]);
+        // OBDII9141print("First read is: "); OBDII9141println(buffer[0]);
         if (buffer[0] != 0x55){
             return false;
         }
     } else {
-        OBDII9141println("Timeout on read 0x55.");
+        // OBDII9141println("Timeout on read 0x55.");
         return false;
     }
     // we get here after we have passed receiving the first 0x55 from ecu.
@@ -174,24 +173,24 @@ bool OBDII9141::init(){
 
     // read v1
     if (!this->serial->readBytes(buffer, 1)){
-        OBDII9141println("Timeout on read v1.");
+        // OBDII9141println("Timeout on read v1.");
         return false;
     } else {
         v1 = buffer[0];
-        OBDII9141print("read v1: "); OBDII9141println(v1);
+        // OBDII9141print("read v1: "); OBDII9141println(v1);
     }
 
     // read v2
     if (!this->serial->readBytes(buffer, 1)){
-        OBDII9141println("Timeout on read v2.");
+        // OBDII9141println("Timeout on read v2.");
         return false;
     } else {
         v2 = buffer[0];
-        OBDII9141print("read v2: "); OBDII9141println(v2);
+        // OBDII9141print("read v2: "); OBDII9141println(v2);
     }
     
-    OBDII9141print("v1: "); OBDII9141println(v1);
-    OBDII9141print("v2: "); OBDII9141println(v2);
+    // OBDII9141print("v1: "); OBDII9141println(v1);
+    // OBDII9141print("v2: "); OBDII9141println(v2);
 
     // these two should be identical according to the spec.
     if (v1 != v2){
@@ -206,7 +205,7 @@ bool OBDII9141::init(){
 
     // finally, attempt to read 0xCC from the ECU, indicating succesful init.
     if (!this->serial->readBytes(buffer, 1)){
-        OBDII9141println("Timeout on 0xCC read.");
+        // OBDII9141println("Timeout on 0xCC read.");
         return false;
     } else {
         // OBDII9141print("read 0xCC?: "); OBDII9141println(buffer[0], HEX);

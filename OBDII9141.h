@@ -1,4 +1,4 @@
-OBDII9141/*
+/*
  *  Copyright (c) 2015, Ivor Wanders
  *  MIT License, see the LICENSE.md file in the root folder.
 */
@@ -18,7 +18,6 @@ OBDII9141/*
 #define OBDII9141_INTERSYMBOL_WAIT 5
 // Milliseconds delay between writing of subsequent bytes on the bus.
 // Is 5ms according to the specification.
-
 
 // When data is sent over the serial port to the K-line transceiver, an echo of
 // this data is heard on the Rx pin; this determines the timeout of readBytes
@@ -58,7 +57,7 @@ OBDII9141/*
 
 class OBDII9141{
     private:
-        OBD_SERIAL_DATA_TYPE* serial;
+        HardwareSerial* serial;
 
         void kline(bool); // sets the state of the Tx pin.
         uint8_t tx_pin;
@@ -70,14 +69,13 @@ class OBDII9141{
         void write(void* b, uint8_t len);
         // writes an array and removes the echo.
 
-
         uint8_t buffer[OBDII9141_BUFFER_SIZE]; // internal buffer.
 
 
     public:
         OBDII9141();
 
-        void begin(uint8_t rx_pin, uint8_t tx_pin);
+        void begin(HardwareSerial & serial_port, uint8_t rx_pin, uint8_t tx_pin);
         // begin method which allows setting the serial port and pins.
 
         bool getCurrentPID(uint8_t pid, uint8_t return_length);
@@ -111,7 +109,5 @@ class OBDII9141{
 
         static uint8_t checksum(void* b, uint8_t len); // public for sim.
 };
-
-
 
 #endif
