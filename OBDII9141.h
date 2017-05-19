@@ -1,34 +1,21 @@
-/*
+OBDII9141/*
  *  Copyright (c) 2015, Ivor Wanders
  *  MIT License, see the LICENSE.md file in the root folder.
 */
 
-#ifndef OBD9141_H
-#define OBD9141_H
+#ifndef OBDII9141_H
+#define OBDII9141_H
 #include "Arduino.h"
 
-// to do some debug printing.
-// #define OBD9141_DEBUG
-
-//#define OBD9141_USE_ALTSOFTSERIAL
-// use AltSoftSerial.h instead of the hardware Serial
-
-// AltSoftSerial is automatically selected when an Arduino is used:
-#if defined(__AVR_ATmega168__) || defined(__AVR_ATmega328P__)
-// Be sure that this library is available, download from http://www.pjrc.com/teensy/td_libs_AltSoftSerial.html"
-#define OBD9141_USE_ALTSOFTSERIAL
-#endif
-
-#define OBD9141_KLINE_BAUD 10400 
+#define OBDII9141_KLINE_BAUD 10400 
 // as per spec.
 
-
-#define OBD9141_BUFFER_SIZE 16
+#define OBDII9141_BUFFER_SIZE 16
 // maximum possible as per protocol is 256 payload, the buffer also contains
 // request and checksum, add 5 + 1 for those on top of the max desired length.
 // User needs to guarantee that the ret_len never exceeds the buffer size.
 
-#define OBD9141_INTERSYMBOL_WAIT 5
+#define OBDII9141_INTERSYMBOL_WAIT 5
 // Milliseconds delay between writing of subsequent bytes on the bus.
 // Is 5ms according to the specification.
 
@@ -38,67 +25,38 @@
 // used after sending data and trying to read the same number of bytes from the
 // serial port to discard the echo.
 // The total timeout for reading the echo is:
-// (OBD9141_REQUEST_ECHO_TIMEOUT_MS * sent_len + 
-//                      OBD9141_WAIT_FOR_ECHO_TIMEOUT) milliseconds.
-#define OBD9141_WAIT_FOR_ECHO_TIMEOUT 5
+// (OBDII9141_REQUEST_ECHO_TIMEOUT_MS * sent_len + 
+//                      OBDII9141_WAIT_FOR_ECHO_TIMEOUT) milliseconds.
+#define OBDII9141_WAIT_FOR_ECHO_TIMEOUT 5
 // Time added to the timeout to read the echo.
-#define OBD9141_REQUEST_ECHO_MS_PER_BYTE 3
+#define OBDII9141_REQUEST_ECHO_MS_PER_BYTE 3
 // Time added per byte sent to wait for the echo.
 
-
 // When a request is to be made, request bytes are pushed on the bus with
-// OBD9141_INTERSYMBOL_WAIT delay between them. After the transmission of the
-// request has been completed, there is a delay of OBD9141_AFTER_REQUEST_DELAY
+// OBDII9141_INTERSYMBOL_WAIT delay between them. After the transmission of the
+// request has been completed, there is a delay of OBDII9141_AFTER_REQUEST_DELAY
 // milliseconds. Then the readBytes method is used  with a timeout of
-// (OBD9141_REQUEST_ANSWER_MS_PER_BYTE * ret_len + 
-//                      OBD9141_WAIT_FOR_REQUEST_ANSWER_TIMEOUT) milliseconds.
+// (OBDII9141_REQUEST_ANSWER_MS_PER_BYTE * ret_len + 
+//                      OBDII9141_WAIT_FOR_REQUEST_ANSWER_TIMEOUT) milliseconds.
 
-#define OBD9141_REQUEST_ANSWER_MS_PER_BYTE 3
+#define OBDII9141_REQUEST_ANSWER_MS_PER_BYTE 3
 // The ECU might not push all bytes on the bus immediately, but wait several ms
 // between the bytes, this is the time allowed per byte for the answer
 
-#define OBD9141_WAIT_FOR_REQUEST_ANSWER_TIMEOUT (30 + 10)
+#define OBDII9141_WAIT_FOR_REQUEST_ANSWER_TIMEOUT (30 + 10)
 // Time added to the read timeout when reading the response to a request. 
 // This should incorporate the 30 ms that's between the request and answer
 // according to the specification.
 
-
-
-#define OBD9141_INIT_IDLE_BUS_BEFORE 3000
+#define OBDII9141_INIT_IDLE_BUS_BEFORE 3000
 // Before the init sequence; the bus is kept idle for this duration in ms.
 
-#define OBD9141_INIT_POST_INIT_DELAY 50
+#define OBDII9141_INIT_POST_INIT_DELAY 50
 // This is a delay after the initialisation has been completed successfully.
 // It is not present in the spec, but prevents a request immediately after the
 // init has succeeded when the other side might not yet be ready.
 
-
-#ifdef OBD9141_DEBUG
-  #ifdef ARDUINO_SAM_DUE
-    #define OBD9141print(a) SerialUSB.print(a);
-    #define OBD9141println(a) SerialUSB.println(a);
-  #else
-    #define OBD9141print(a) Serial.print(a);
-    #define OBD9141println(a) Serial.println(a);
-  #endif
-
-#else
-    #define OBD9141print(a)
-    #define OBD9141println(a)
-#endif
-
-// use the correct Serial datatype.
-#ifdef OBD9141_USE_ALTSOFTSERIAL
-// Be sure that this library is available, download it from http://www.pjrc.com/teensy/td_libs_AltSoftSerial.html"
-#include <AltSoftSerial.h>
-#define OBD_SERIAL_DATA_TYPE AltSoftSerial
-#else
-#define OBD_SERIAL_DATA_TYPE HardwareSerial
-#endif
-// OBD_SERIAL_DATA_TYPE needs to have begin() as well as read(), available() and write() from Stream.
-
-
-class OBD9141{
+class OBDII9141{
     private:
         OBD_SERIAL_DATA_TYPE* serial;
 
@@ -113,15 +71,14 @@ class OBD9141{
         // writes an array and removes the echo.
 
 
-        uint8_t buffer[OBD9141_BUFFER_SIZE]; // internal buffer.
+        uint8_t buffer[OBDII9141_BUFFER_SIZE]; // internal buffer.
 
 
     public:
-        OBD9141();
+        OBDII9141();
 
-        void begin(OBD_SERIAL_DATA_TYPE & serial_port, uint8_t rx_pin, uint8_t tx_pin);
+        void begin(uint8_t rx_pin, uint8_t tx_pin);
         // begin method which allows setting the serial port and pins.
-
 
         bool getCurrentPID(uint8_t pid, uint8_t return_length);
         // The standard PID request on the current state, this is what you
@@ -139,11 +96,9 @@ class OBD9141{
         // length was returned and if the checksum matches.
         // User needs to ensure that the ret_len never exceeds the buffer size.
 
-
         uint8_t readUint8(); // returns right part from the buffer as uint8_t
         uint16_t readUint16(); // idem...
         uint8_t readUint8(uint8_t index); // returns byte on index.
-
 
         void set_port(bool enabled);
         // need to disable the port before init.
@@ -153,8 +108,6 @@ class OBD9141{
         // returns whether the procedure was finished correctly.
         // The class keeps no track of whether this was successful or not.
         // It is up to the user to ensure that the initialisation is called.
-
-
 
         static uint8_t checksum(void* b, uint8_t len); // public for sim.
 };

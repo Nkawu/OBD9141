@@ -2,11 +2,11 @@
  *  Copyright (c) 2015, Ivor Wanders
  *  MIT License, see the LICENSE.md file in the root folder.
 */
-#include "OBD9141.h"
+#include "OBDII9141.h"
 
-OBD9141::OBD9141(){};
+OBDII9141::OBDII9141(){};
 
-void OBD9141::begin(OBD_SERIAL_DATA_TYPE & serial_port, uint8_t rx_pin, uint8_t tx_pin){
+void OBDII9141::begin(HardwareSerial & serial_port, uint8_t rx_pin, uint8_t tx_pin){
     this->serial = &serial_port;
     this->tx_pin = tx_pin;
     this->rx_pin = rx_pin;
@@ -17,31 +17,23 @@ void OBD9141::begin(OBD_SERIAL_DATA_TYPE & serial_port, uint8_t rx_pin, uint8_t 
     this->set_port(true); // prevents calling this->serial->end() before start.
 }
 
-void OBD9141::set_port(bool enabled){
+void OBDII9141::set_port(bool enabled){
     if (enabled){
         // Work around the incorrect pinmode configuration in Due.
-        #ifdef ARDUINO_SAM_DUE
-          g_APinDescription[this->rx_pin].pPort -> PIO_PDR = g_APinDescription[this->rx_pin].ulPin;
-          g_APinDescription[this->tx_pin].pPort -> PIO_PDR = g_APinDescription[this->tx_pin].ulPin;
-        #endif
-        this->serial->begin(OBD9141_KLINE_BAUD);
+        this->serial->begin(OBDII9141_KLINE_BAUD);
     } else {
         this->serial->end();
-        #ifdef ARDUINO_SAM_DUE
-          g_APinDescription[this->rx_pin].pPort -> PIO_PER = g_APinDescription[this->rx_pin].ulPin; 
-          g_APinDescription[this->tx_pin].pPort -> PIO_PER = g_APinDescription[this->tx_pin].ulPin; 
-        #endif
         pinMode(this->tx_pin, OUTPUT);
         digitalWrite(this->tx_pin, HIGH);
     }
 }
 
-void OBD9141::kline(bool enabled){
+void OBDII9141::kline(bool enabled){
     digitalWrite(this->tx_pin, enabled);
 }
 
 
-uint8_t OBD9141::checksum(void* b, uint8_t len){
+uint8_t OBDII9141::checksum(void* b, uint8_t len){
     uint8_t ret = 0;
     for (uint8_t i=0; i < len; i++){
         ret += reinterpret_cast<uint8_t*>(b)[i];
@@ -49,27 +41,25 @@ uint8_t OBD9141::checksum(void* b, uint8_t len){
     return ret;
 }
 
-void OBD9141::write(uint8_t b){
-    // OBD9141print("w: "); OBD9141println(b);
+void OBDII9141::write(uint8_t b){
     this->serial->write(b);
     
-    this->serial->setTimeout(OBD9141_REQUEST_ECHO_MS_PER_BYTE * 1 + OBD9141_WAIT_FOR_ECHO_TIMEOUT);
+    this->serial->setTimeout(OBDII9141_REQUEST_ECHO_MS_PER_BYTE * 1 + OBDII9141_WAIT_FOR_ECHO_TIMEOUT);
     uint8_t tmp[1]; // temporary variable to read into.
     this->serial->readBytes(tmp, 1);
 }
 
-void OBD9141::write(void* b, uint8_t len){
+void OBDII9141::write(void* b, uint8_t len){
     for (uint8_t i=0; i < len ; i++){
-        // OBD9141print("w: ");OBD9141println(reinterpret_cast<uint8_t*>(b)[i]);
         this->serial->write(reinterpret_cast<uint8_t*>(b)[i]);
-        delay(OBD9141_INTERSYMBOL_WAIT);
+        delay(OBDII9141_INTERSYMBOL_WAIT);
     }
-    this->serial->setTimeout(OBD9141_REQUEST_ECHO_MS_PER_BYTE * len + OBD9141_WAIT_FOR_ECHO_TIMEOUT);
+    this->serial->setTimeout(OBDII9141_REQUEST_ECHO_MS_PER_BYTE * len + OBDII9141_WAIT_FOR_ECHO_TIMEOUT);
     uint8_t tmp[len]; // temporary variable to read into.
     this->serial->readBytes(tmp, len);
 }
 
-bool OBD9141::request(void* request, uint8_t request_len, uint8_t ret_len){
+bool OBDII9141::request(void* request, uint8_t request_len, uint8_t ret_len){
     uint8_t buf[request_len+1];
     memcpy(buf, request, request_len); // copy request
 
@@ -81,18 +71,14 @@ bool OBD9141::request(void* request, uint8_t request_len, uint8_t ret_len){
     // for the data in the readBytes function.
     
     // set proper timeout
-    this->serial->setTimeout(OBD9141_REQUEST_ANSWER_MS_PER_BYTE * ret_len + OBD9141_WAIT_FOR_REQUEST_ANSWER_TIMEOUT);
+    this->serial->setTimeout(OBDII9141_REQUEST_ANSWER_MS_PER_BYTE * ret_len + OBDII9141_WAIT_FOR_REQUEST_ANSWER_TIMEOUT);
     memset(this->buffer, 0, ret_len+1);
     
-    //OBD9141print("Trying to get x bytes: "); OBD9141println(ret_len+1);
+    //OBDII9141print("Trying to get x bytes: "); OBDII9141println(ret_len+1);
     if (this->serial->readBytes(this->buffer, ret_len+1)){
-        // for (uint8_t i=0; i< (ret_len+1); i++){
-            // OBD9141print(this->buffer[i]);OBD9141print(" ");
-        // };OBD9141println();
-        
         return (this->checksum(&(this->buffer[0]), ret_len) == this->buffer[ret_len]);// have data; return whether it is valid.
     } else {
-        OBD9141println("Timeout on reading bytes.");
+        OBDII9141println("Timeout on reading bytes.");
         return false; // failed getting data.
     }
 }
@@ -115,7 +101,7 @@ bool OBD9141::request(void* request, uint8_t request_len, uint8_t ret_len){
 */
 
 
-bool OBD9141::getPID(uint8_t pid, uint8_t mode, uint8_t return_length){
+bool OBDII9141::getPID(uint8_t pid, uint8_t mode, uint8_t return_length){
     uint8_t message[5] = {0x68, 0x6A, 0xF1, mode, pid};
     // header of request is 5 long, first three are always constant.
 
@@ -128,28 +114,28 @@ bool OBD9141::getPID(uint8_t pid, uint8_t mode, uint8_t return_length){
     return res;
 }
 
-bool OBD9141::getCurrentPID(uint8_t pid, uint8_t return_length){
+bool OBDII9141::getCurrentPID(uint8_t pid, uint8_t return_length){
     return this->getPID(pid, 0x01, return_length);
 }
 
-uint8_t OBD9141::readUint8(){
+uint8_t OBDII9141::readUint8(){
     return this->buffer[5];
 }
 
-uint16_t OBD9141::readUint16(){
+uint16_t OBDII9141::readUint16(){
     return this->buffer[5]*256 + this->buffer[6]; // need to reverse endianness
 }
 
-uint8_t OBD9141::readUint8(uint8_t index){
+uint8_t OBDII9141::readUint8(uint8_t index){
     return this->buffer[5 + index];
 }
 
-bool OBD9141::init(){
+bool OBDII9141::init(){
     // this function performs the ISO9141 5-baud 'slow' init.
     this->set_port(false); // disable the port.
     this->kline(true);
-    delay(OBD9141_INIT_IDLE_BUS_BEFORE); // no traffic on bus for 3 seconds.
-    OBD9141println("Before magic 5 baud.");
+    delay(OBDII9141_INIT_IDLE_BUS_BEFORE); // no traffic on bus for 3 seconds.
+    OBDII9141println("Before magic 5 baud.");
     // next, send the startup 5 baud init..
     this->kline(false); delay(200); // start
     this->kline(true); delay(400);  // first two bits
@@ -162,9 +148,9 @@ bool OBD9141::init(){
 
     // done, from now on it the bus can be treated ad a 10400 baud serial port.
 
-    OBD9141println("Before setting port.");
+    OBDII9141println("Before setting port.");
     this->set_port(true);
-    OBD9141println("After setting port.");
+    OBDII9141println("After setting port.");
     uint8_t buffer[1];
 
     this->serial->setTimeout(300+200);
@@ -172,16 +158,15 @@ bool OBD9141::init(){
 
     // read first value into buffer, should be 0x55
     if (this->serial->readBytes(buffer, 1)){
-        OBD9141print("First read is: "); OBD9141println(buffer[0]);
+        OBDII9141print("First read is: "); OBDII9141println(buffer[0]);
         if (buffer[0] != 0x55){
             return false;
         }
     } else {
-        OBD9141println("Timeout on read 0x55.");
+        OBDII9141println("Timeout on read 0x55.");
         return false;
     }
     // we get here after we have passed receiving the first 0x55 from ecu.
-
 
     this->serial->setTimeout(20); // w2 and w3 are pauses between 5 and 20 ms
 
@@ -189,24 +174,24 @@ bool OBD9141::init(){
 
     // read v1
     if (!this->serial->readBytes(buffer, 1)){
-        OBD9141println("Timeout on read v1.");
+        OBDII9141println("Timeout on read v1.");
         return false;
     } else {
         v1 = buffer[0];
-        OBD9141print("read v1: "); OBD9141println(v1);
+        OBDII9141print("read v1: "); OBDII9141println(v1);
     }
 
     // read v2
     if (!this->serial->readBytes(buffer, 1)){
-        OBD9141println("Timeout on read v2.");
+        OBDII9141println("Timeout on read v2.");
         return false;
     } else {
         v2 = buffer[0];
-        OBD9141print("read v2: "); OBD9141println(v2);
+        OBDII9141print("read v2: "); OBDII9141println(v2);
     }
     
-    OBD9141print("v1: "); OBD9141println(v1);
-    OBD9141print("v2: "); OBD9141println(v2);
+    OBDII9141print("v1: "); OBDII9141println(v1);
+    OBDII9141print("v2: "); OBDII9141println(v2);
 
     // these two should be identical according to the spec.
     if (v1 != v2){
@@ -221,12 +206,12 @@ bool OBD9141::init(){
 
     // finally, attempt to read 0xCC from the ECU, indicating succesful init.
     if (!this->serial->readBytes(buffer, 1)){
-        OBD9141println("Timeout on 0xCC read.");
+        OBDII9141println("Timeout on 0xCC read.");
         return false;
     } else {
-        // OBD9141print("read 0xCC?: "); OBD9141println(buffer[0], HEX);
+        // OBDII9141print("read 0xCC?: "); OBDII9141println(buffer[0], HEX);
         if ((buffer[0] == 0xCC)){ // done if this is inverse of 0x33
-            delay(OBD9141_INIT_POST_INIT_DELAY);
+            delay(OBDII9141_INIT_POST_INIT_DELAY);
             // this delay is not in the spec, but prevents requests immediately
             // after the finishing of the init sequency.
 
@@ -236,5 +221,4 @@ bool OBD9141::init(){
         }
     }
 }
-
 

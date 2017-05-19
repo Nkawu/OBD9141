@@ -1,0 +1,11 @@
+{
+    name: "OBDII9141",
+    description: "Arduino library read ISO9141-2 ODBII data using a MC33290 chip",
+    keywords: "obd,obd2,obdii,iso9141",
+    repository: {
+        type: "git",
+        url: "https://github.com/Nkawu/OBDII9141.git"
+    },
+    frameworks: "arduino",
+    platforms: "atmelavr"
+}
